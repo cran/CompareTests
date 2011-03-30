@@ -1,0 +1,9 @@
+b2465895be5b2f16e9832fb9715bec92 *DESCRIPTION
+9fdfeb11f7ddba6f3aab9aaa6b1ac5dd *NAMESPACE
+ad1a8328525be1149a5582f39d72f3b9 *R/CompareTests.R
+cc675b3070ab16307aa95fa41a88e1b8 *R/fulltable.R
+495ecb488d091e2fe76d67e59363944e *data/specimens.rda
+35af26057e3c9f46447b3f624f0d1c7f *man/CompareTests-package.Rd
+94dca68dcefb63d4f5b7c8b388ba7bf6 *man/CompareTests.Rd
+6128fced57eb94595cb332c86e780df0 *man/fulltable.Rd
+f13b563c1e92bc473120d7deb2224ec8 *man/specimens.Rd
