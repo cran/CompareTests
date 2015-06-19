@@ -2,22 +2,22 @@
 \alias{CompareTests-package}
 \docType{package}
 \title{
-Estimate diagnostic accuracy (sensitivity, specificity, etc) and agreement statistics when one test is conducted on only a subsample of specimens
+Correct for Verification Bias in Diagnostic Accuracy & Agreement
 }
 \description{
-A standard test is observed on all specimens.  We treat the second test (or sampled test) as being conducted on only a stratified sample of specimens.  We treat the total sample as stratified two-phase sampling and use inverse probability weighting.  We estimate diagnostic accuracy (category-specific classification probabilities; for binary tests reduces to specificity and sensitivity) and agreement statistics (percent agreement, percent agreement by category, Kappa (unweighted), and symmetry test (reduces to McNemar's test for binary tests)). 
+A standard test is observed on all specimens.  We treat the second test (or sampled test) as being conducted on only a stratified sample of specimens.  Verification Bias is this situation when the specimens for doing the second (sampled) test is not under investigator control.  We treat the total sample as stratified two-phase sampling and use inverse probability weighting.  We estimate diagnostic accuracy (category-specific classification probabilities; for binary tests reduces to specificity and sensitivity) and agreement statistics (percent agreement, percent agreement by category, Kappa (unweighted), Kappa (quadratic weighted) and symmetry test (reduces to McNemar's test for binary tests)). 
 }
 \details{
 \tabular{ll}{
 Package: \tab CompareTests\cr
 Type: \tab Package\cr
-Version: \tab 1.0\cr
-Date: \tab 2011-03-30\cr
+Version: \tab 1.1\cr
+Date: \tab 2015-06-19\cr
 License: \tab GPL-3\cr
 LazyLoad: \tab yes\cr
 }
 
-You have a dataframe with columns "stdtest" (no NAs allowed; all specimens with NA stdtest results are dropped), "sampledtest" (a gold standard which is NA for some specimens), sampling strata "strata1" "strata2" (values cannot be missing for any specimens). Get the diagnostic and agreement statistics with CompareTests(stdtest,sampledtest,interaction(strata1,strata2),goldstd="sampledtest")
+You have a dataframe with columns "stdtest" (no NAs allowed; all specimens with NA stdtest results are dropped), "sampledtest" (a gold standard which is NA for some specimens), sampling strata "strata1" "strata2" (values cannot be missing for any specimens). Correct for Verification Bias in the diagnostic and agreement statistics with CompareTests(stdtest,sampledtest,interaction(strata1,strata2),goldstd="sampledtest")
 
 
 }
@@ -29,12 +29,10 @@ Maintainer: Hormuzd Katki <katkih@mail.nih.gov>
 }
 \references{
 
-Katki HA, Li Y, Edelstein DW, Castle PE.  Estimating the agreement and diagnostic accuracy of two diagnostic tests when one test is conducted on only a subsample of specimens.  Submitted.
+Katki HA, Li Y, Edelstein DW, Castle PE.  Estimating the agreement and diagnostic accuracy of two diagnostic tests when one test is conducted on only a subsample of specimens.  Stat Med. 2012 Feb 28; 31(5): 10.1002/sim.4422.
 
 }
 \keyword{ package }
-\seealso{
-}
 \examples{
 
 # Get specimens dataset

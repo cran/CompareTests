@@ -7,25 +7,15 @@ fulltable attaches margins and NA/NaN category to the output of table()
 \description{
 fulltable attaches margins and NA/NaN category to the output of table()
 }
-\usage{
-}
 %- maybe also 'usage' for other objects documented here.
 \arguments{
 same as table()
 }
-\details{
-
-}
 \value{
 same as returned from table()
 }
-\references{
-
-}
 \author{
 Hormuzd A. Katki
-}
-\note{
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~

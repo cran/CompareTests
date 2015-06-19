@@ -16,12 +16,6 @@ stdtest has been done on everyone, and sampledtest has been done on a stratifed 
     \item{\code{sampledtest}}{new test result available only on stratified subsample}
   }
 }
-\details{
-}
-\source{
-}
-\references{
-}
 \examples{
 data(specimens)
 }

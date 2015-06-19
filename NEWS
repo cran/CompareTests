@@ -1,0 +1,7 @@
+Changes in version 1.1:
+
+NEW FEATURES
+
+    o   Now computes and outputs weighted Kappa using quadratic weights.
+    o   The outputted CI for all quantities is based on the logit scale.
+

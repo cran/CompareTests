@@ -3,3 +3,7 @@
 
 # Export all names
 exportPattern(".")
+
+# Kurt Hornik suggested this
+importFrom("stats", "addmargins", "pchisq", "toeplitz")
+

@@ -17,6 +17,11 @@ CompareTests <- function(stdtest,sampledtest,strata=NA,goldstd="sampledtest")
 ## Order the categories from least to most severe, for binary (-,+) or (0,1) to make sure
 ## that what is output as sensitivity is not the specificity, or that PPV is not reported
 ## as NPV.
+##
+## Version 1.1: Added weighted Kappa (quadratic weights only); 13 Oct 2011
+##              Now the outputted CI for all quantities uses logit-transformed variances
+##              Note that p-value for Chlamydia example in the Stat Med paper is 0.12, not 0.02.  
+##
 ## ----------------------------------------------------------------------
 ## Arguments: IxIxS array of cells plus IxS array of margins
 ## ----------------------------------------------------------------------
@@ -36,7 +41,7 @@ if (!any(is.na(strata))) {
   margins <- temp[I+3,1:I,1:S] 
 }
 else { # note that if any strata have missing values, I ignore all the strata
-  warning('Some sampling strata have missing values. Ignoring all strata.')
+  warning('Either you did not specify sampling strata or some sampling strata have missing values. Ignoring all strata.')
   temp <- fulltable(as.factor(sampledtest),as.factor(stdtest))
   dimtemp <- dim(temp); I <- dim(temp)[1]-3
   # For I ratings and S strata, temp is (I+3)x(I+3)
@@ -99,6 +104,11 @@ for(i in 1:dim(cells)[1]){
 
 
 #Find the covariances
+# There are I matrices of IxI dimension
+# Matrix 1 is the variance-covariance for all cells in column 1, etc for all other columns
+# Columns are independent
+# e.g if 4 categories, then each column has 4 variances (for each cell)
+# and 6 possible covariances.  Matrix is symmetric of course
 covars <- array(0, c(dim(cells)[1], dim(cells)[1], dim(cells)[2]))
 for(i in 1:dim(cells)[1]){
 	for(j in 1:dim(cells)[2]){
@@ -203,8 +213,61 @@ for(i in 1:dim(cells)[1]){
 covarP0Pe <- covarP0Pe/(sum(estCohort)^3)
 varKappa <- (varP0 + 2*covarP0Pe*(kappa-1) + varPe*(kappa-1)^2)/((1-pe)^2)
 
+##
+# Weighted Kappa calculations
+# use quadratic weights
+##
 
-#Test operating characteristics
+# The commented out version is the general form for general weights, but the variance is hard to get
+# Uncomment this to compute for general weights if anyone ever asks
+#KappaWeights <- toeplitz(1-(0:(I-1))^2/(I-1)^2) # banded matrix, 1 on main diag, 4 on the 2nd bands, etc.
+#N <- sum(estCohort)
+#P0mat <- estCohort/N # probs of every cell in IxI matrix
+#Pemat <- (margins1 %*% t(margins2)) / N^2 # product of every pair of margins
+#WeightedKappa <- sum(KappaWeights * (P0mat-Pemat)) / (1-sum(KappaWeights * Pemat))
+
+# This is the weighted kappa specifically for quadratic weights, a form more tractable for the variance
+# See bottom of Shoukri pg 41 (taken from Fleiss & Cohen 1973)
+N <- sum(estCohort)
+KappaWeights <- toeplitz((0:(I-1))^2)
+KappaNumer <- sum(KappaWeights*estCohort)
+KappaDenom <- sum(KappaWeights*(margins1 %*% t(margins2)))
+WeightedKappa <- 1- N*KappaNumer/KappaDenom
+
+# Variance of weighted Kappa
+# Need weighted sum of the covariances of N_ij,N_kj
+varNumer <-0
+for(i in 1:I){
+	for(j in 1:I){
+		for(k in 1:I){
+			varNumer <- varNumer + (i-k)^2*(j-k)^2*covars[i,j,k] 
+		}#end of for k
+	}#end of for j
+}#end of for i
+#varNumer <- sum(newKappaWeights^2 * vars) + covsum ; I think this double counts the variances
+constant <- KappaWeights %*% margins1 # Ix1 vector
+varDenom <- 0
+for(i in 1:I){
+	for(j in 1:I){
+		varDenom <- varDenom + constant[i]*constant[j]*marginCovars[i,j]
+	}#end of for j
+}#end of for i
+covNumerDenom <-0
+for(i in 1:I){
+	for(j in 1:I){
+		for(k in 1:I){
+			covNumerDenom <- covNumerDenom + (i-j)^2*(k-j)^2*margins1[j]*covars[i,k,j]
+		}#end of for k
+	}#end of for j
+}#end of for i
+
+# Delta-method variance for a ratio from Korn and Graubard Pg 26 eqn 2.4-7
+varWeightedKappa <- N^2*(varNumer + (WeightedKappa/N)^2*varDenom + (WeightedKappa/N)*covNumerDenom)/KappaDenom^2
+
+##
+# Part 2: Diagnostic Test operating characteristics
+##
+
 # PPV NPV
 iPV <- diag(estCohort)/margins1
 varsiPV <- diag(vars)/margins1^2
@@ -241,25 +304,52 @@ output <- append(output, list(iPV))
 output <- append(output, list(varsiPV))
 output <- append(output, list(iCSCP))
 output <- append(output, list(varsiCSCP))
+output <- append(output, list(WeightedKappa))
+output <- append(output, list(varWeightedKappa))
 names(output) <- c("Cells", "EstCohort", "Cellvars", "Cellcovars", "p0", "Varp0", "AgrCat",
                    "VarAgrCat", "uncondsymm", "Margincovars",
-                   "Kappa","Kappavar","iPV", "VarsiPV", "iCSCP", "VarsiCSCP")
+                   "Kappa","Kappavar","iPV", "VarsiPV", "iCSCP", "VarsiCSCP","WeightedKappa",
+                   "varWeightedKappa")
 
 # Print output
 cat("The weighted contingency table:\n")
 print(estCohort)
+
 cat("\n\nAgreement Statistics\n\n")
+
+# Natural scale CI
+#cat("pct agree and 95% CI:",output$p0,
+#    "(",output$p0+1.96*c(-sqrt(output$Varp0),sqrt(output$Varp0)),")\n")
+# Logit scale CI
 cat("pct agree and 95% CI:",output$p0,
-    "(",output$p0+1.96*c(-sqrt(output$Varp0),sqrt(output$Varp0)),")\n")
+    "(",(1+exp(-( log(output$p0/(1-output$p0))+1.96*(sqrt(output$Varp0)/output$p0/(1-output$p0))*c(-1,+1) )))^-1,")\n")
+    
 cat("pct agree by categories and 95% CI","\n")
-leftci <- output$AgrCat-1.96*sqrt(output$VarAgrCat)
-rightci <-output$AgrCat+1.96*sqrt(output$VarAgrCat)
+# Natural scale CI
+#leftci <- output$AgrCat-1.96*sqrt(output$VarAgrCat)
+#rightci <-output$AgrCat+1.96*sqrt(output$VarAgrCat)
+# Logit scale CI
+leftci <- (1+exp(-( log(output$AgrCat/(1-output$AgrCat))-1.96*sqrt(output$VarAgrCat)/output$AgrCat/(1-output$AgrCat) )))^-1
+rightci <-(1+exp(-( log(output$AgrCat/(1-output$AgrCat))+1.96*sqrt(output$VarAgrCat)/output$AgrCat/(1-output$AgrCat) )))^-1
 agrcatstats <- cbind(output$AgrCat,leftci,rightci)
 colnames(agrcatstats) <- c("est","left","right")
 print(agrcatstats)
+
+# Natural scale CI
+#cat("Kappa and 95% CI:",output$Kappa,
+#    "(",output$Kappa+1.96*c(-sqrt(output$Kappavar),sqrt(output$Kappavar)),")\n")
+# Logit scale CI
 cat("Kappa and 95% CI:",output$Kappa,
-    "(",output$Kappa+1.96*c(-sqrt(output$Kappavar),sqrt(output$Kappavar)),")\n")
-cat("symmetry chi-square:",output$uncondsymm,"p=",1-pchisq(output$uncondsymm,6),"\n")
+    "(",(1+exp(-( log(output$Kappa/(1-output$Kappa))+1.96*sqrt(output$Kappavar)/output$Kappa/(1-output$Kappa)*c(-1,+1) )))^-1,")\n")
+
+# Natural scale CI    
+#cat("Weighted Kappa (quadratic weights) and 95% CI:",output$WeightedKappa,
+#    "(",output$WeightedKappa+1.96*c(-sqrt(output$varWeightedKappa),sqrt(output$varWeightedKappa)),")\n")
+# Logit scale CI    
+cat("Weighted Kappa (quadratic weights) and 95% CI:",output$WeightedKappa,
+    "(",(1+exp(-( log(output$WeightedKappa/(1-output$WeightedKappa))+1.96*sqrt(output$varWeightedKappa)/WeightedKappa/(1-output$WeightedKappa)*c(-1,+1) )))^-1,")\n")
+
+cat("symmetry chi-square:",output$uncondsymm,"p=",1-pchisq(output$uncondsymm,dim(cells)[1]*(dim(cells)[1]-1)/2),"\n")
 cat("\n")
 
 if (goldstd != FALSE) {

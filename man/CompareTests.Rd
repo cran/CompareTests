@@ -2,10 +2,10 @@
 \alias{CompareTests}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-CompareTests estimates diagnostic accuracy (sensitivity, specificity, etc) and agreement statistics when one test is conducted on only a subsample of specimens
+Correct for Verification Bias in Diagnostic Accuracy & Agreement
 }
 \description{
-A standard test is observed on all specimens.  We treat the second test (or sampled test) as being conducted on only a stratified sample of specimens.  We treat the total sample as stratified two-phase sampling and use inverse probability weighting.  We estimate diagnostic accuracy (category-specific classification probabilities; for binary tests reduces to specificity and sensitivity) and agreement statistics (percent agreement, percent agreement by category, Kappa (unweighted), and symmetry tests (reduces to McNemar's test for binary tests)).
+A standard test is observed on all specimens.  We treat the second test (or sampled test) as being conducted on only a stratified sample of specimens.  We treat the total sample as stratified two-phase sampling and use inverse probability weighting.  We estimate diagnostic accuracy (category-specific classification probabilities; for binary tests reduces to specificity and sensitivity) and agreement statistics (percent agreement, percent agreement by category, Kappa (unweighted), Kappa (quadratic weighted) and symmetry tests (reduces to McNemar's test for binary tests)).
 }
 \usage{
 CompareTests(stdtest, sampledtest, strata = NA, goldstd = "sampledtest")
@@ -21,9 +21,7 @@ CompareTests(stdtest, sampledtest, strata = NA, goldstd = "sampledtest")
   \item{goldstd}{For outputing diagnostic accuracy statistics, denote if "stdtest" or "sampledtest" is the gold standard.  If no gold standard, set to FALSE.
 }
 }
-\details{
 
-}
 \value{
 
 Outputs to screen the estimated contingency table of paired test results, agreement statistics, and diagnostic accuracy statistics.
@@ -45,10 +43,11 @@ Returns a list with the following components
 \item{VarsiPV }{Variance of each predictive value (for binary tests, NPV and PPV)}
 \item{iCSCP}{Each category-specific classification probability (for binary tests, specificity and sensitivity}
 \item{VarsiCSCP}{Variance of each category-specific classification probability (for binary tests, specificity and sensitivity}
-
+\item{WeightedKappa }{Kappa (quadratic weights)}
+\item{varWeightedKappa }{Variance of quadratic-weighted Kappa}
 }
 \references{
-Katki HA, Li Y, Edelstein DW, Castle PE.  Estimating the agreement and diagnostic accuracy of two diagnostic tests when one test is conducted on only a subsample of specimens.  Submitted.
+Katki HA, Li Y, Edelstein DW, Castle PE.  Estimating the agreement and diagnostic accuracy of two diagnostic tests when one test is conducted on only a subsample of specimens. Stat Med. 2012 Feb 28; 31(5): 10.1002/sim.4422.
 }
 \author{
 Hormuzd A. Katki and David W. Edelstein
@@ -61,50 +60,83 @@ If you have multiple variables to be crossed to represent the sampling strata, u
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{
 
-}
 \examples{
 ##---- Should be DIRECTLY executable !! ----
 ##-- ==>  Define data, use random,
 ##--	or do  help(data=index)  for the standard data sets.
-data(specimens)
-temp <- CompareTests(specimens$stdtest,specimens$sampledtest,specimens$stratum,goldstd="sampledtest")
 
+##
+# Stat Med Paper 2x2 Chlamydia testing verification bias example
+# Note that p for symmetry test is 0.12 not 0.02 as reported in the Stat Med paper
+##
+
+# Convert 2x2 Chlamydia testing table to a dataframe for analysis
+# Include NAs for the samples where CTDT test was not conducted (HC2 was conducted on all)
+HC2stdtest <- c(rep(1,827),rep(0,4998))
+stratum <- HC2stdtest
+CTDTsampledtest <- c(           rep(1,800), # 1,1 cell
+                                rep(0,27), # 1,0 cell HC2+ , CTDT-
+                                rep(NA,827-800-27), # HC2+, and no CTDT test done
+                                rep(1,6), # 0,1 cell: HC2-, CTDT+
+                                rep(0,396),# 0,0 cell: HC2- and CTDT-
+                                rep(NA,4998-6-396) # HC2-, no CTDT test done
+)
+chlamydia <- data.frame(stratum,HC2stdtest,CTDTsampledtest)					
+
+# Analysis
+temp <- CompareTests(chlamydia$HC2stdtest,
+                     chlamydia$CTDTsampledtest,
+                     chlamydia$stratum,
+                     goldstd="sampledtest"
+)
+
+
+##
+# Example analysis of fictitious data example
+##
+data(specimens)
+temp <- CompareTests(specimens$stdtest,
+                     specimens$sampledtest,
+                     specimens$stratum,
+                     goldstd="sampledtest")
 ## The output is
-#The weighted contingency table:
-#                      as.factor.stdtest.
-#as.factor.sampledtest.     1       2      3      4
-#                     1 47.88   7.158  3.322  0.000
-#                     2 20.12 104.006 21.861  2.682
-#                     3  0.00  10.836 97.494  8.823
-#                     4  0.00   0.000  3.322 74.495
-#
-#
-#Agreement Statistics
-#
-#pct agree and 95% CI: 0.8057 ( 0.7499 0.8614 )
-#pct agree by categories and 95% CI 
-#     est   left  right
-#1 0.6101 0.4560 0.7642
-#2 0.6241 0.5348 0.7133
-#3 0.6693 0.5632 0.7754
-#4 0.8340 0.6866 0.9815
-#Kappa and 95% CI: 0.734 ( 0.6575 0.8104 )
-#symmetry chi-square: 9.119 p= 0.167 
-#
-#Diagnostic Accuracy statistics
-#
-#       est   left  right
-#1PV 0.7041 0.5422 0.8271
-#2PV 0.8525 0.7362 0.9229
-#3PV 0.7738 0.6547 0.8605
-#4PV 0.8662 0.6928 0.9490
-#         est   left  right
-#1CSCP 0.8204 0.6011 0.9327
-#2CSCP 0.6996 0.6169 0.7710
-#3CSCP 0.8322 0.7219 0.9046
-#4CSCP 0.9573 0.5605 0.9975
+# The weighted contingency table:
+#                             as.factor.stdtest.
+# as.factor.sampledtest.     1       2      3      4
+#                      1 47.88   7.158  3.322  0.000
+#                      2 20.12 104.006 21.861  2.682
+#                      3  0.00  10.836 97.494  8.823
+#                      4  0.00   0.000  3.322 74.495
+# 
+# 
+# Agreement Statistics
+# 
+# pct agree and 95% CI: 0.8057 ( 0.7438 0.8555 )
+# pct agree by categories and 95% CI 
+#      est   left  right
+# 1 0.6101 0.4501 0.7494
+# 2 0.6241 0.5315 0.7083
+# 3 0.6693 0.5562 0.7658
+# 4 0.8340 0.6340 0.9358
+# Kappa and 95% CI: 0.734 ( 0.6509 0.8032 )
+# Weighted Kappa (quadratic weights) and 95% CI: 0.8767 ( 0.7107 0.9536 )
+# symmetry chi-square: 9.119 p= 0.167 
+# 
+# 
+# 
+# Diagnostic Accuracy statistics
+# 
+#        est   left  right
+# 1PV 0.7041 0.5422 0.8271
+# 2PV 0.8525 0.7362 0.9229
+# 3PV 0.7738 0.6547 0.8605
+# 4PV 0.8662 0.6928 0.9490
+#          est   left  right
+# 1CSCP 0.8204 0.6011 0.9327
+# 2CSCP 0.6996 0.6169 0.7710
+# 3CSCP 0.8322 0.7219 0.9046
+# 4CSCP 0.9573 0.5605 0.9975
 }
 
 % Add one or more standard keywords, see file 'KEYWORDS' in the
