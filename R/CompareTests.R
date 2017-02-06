@@ -25,31 +25,53 @@ CompareTests <- function(stdtest,sampledtest,strata=NA,goldstd="sampledtest")
 ## ----------------------------------------------------------------------
 ## Arguments: IxIxS array of cells plus IxS array of margins
 ## ----------------------------------------------------------------------
-## Author: David Edelstein and Hormuzd Katki, Date: 27 Jul 2009, 12:24
+## Author: David Edelstein and Hormuzd Katki, Date: 27 Jul 2009, 12:24; thanks to Martin Maechler (#MM) for fixing for R 3.4
 
 ##
 # Take raw data on each unit make the IxIxS array of cells and IxS array of margins
 # If no strata, cells are IxI and margins are an I element vector  
 ##
-if (!any(is.na(strata))) {
+  
+  i.o <- if(getRversion() >= "3.4") 2 else 3 #MM
+  
+  if (!any(is.na(strata))) {
   temp <- fulltable(as.factor(sampledtest),as.factor(stdtest),as.factor(strata))
-  dimtemp <- dim(temp); I <- dim(temp)[1]-3; S <- dim(temp)[3]-3
-  # For I ratings and S strata, temp is (I+3)x(I+3)
-  # Get rid of the 3 NA, <NA>, and Sum row/cols/strata; cells is IxIxS
+  # dimtemp <- dim(temp); I <- dim(temp)[1]-3; S <- dim(temp)[3]-3
+  # # For I ratings and S strata, temp is (I+3)x(I+3)
+  # # Get rid of the 3 NA, <NA>, and Sum row/cols/strata; cells is IxIxS
+  
+  I <- dim(temp)[1]-i.o; S <- dim(temp)[3]-i.o #MM
+  stopifnot(I >= 2, S >= 2) ## inner logic below (margins  &  colSums(cells) must match)
+  # For I ratings and S strata, temp is (I+i.o)x(I+i.o)
+  
+  # Get rid of <NA> and Sum row/cols/strata; cells is IxIxS
   cells <- temp[1:I,1:I,1:S] 
   # For each stratum (3rd index), Pick out the Sum row (last row) the p colsums; is 1xIxS
-  margins <- temp[I+3,1:I,1:S] 
+  # margins <- temp[I+3,1:I,1:S] 
+  
+  margins <- temp[I+i.o,1:I,1:S] #MM
+  
 }
 else { # note that if any strata have missing values, I ignore all the strata
   warning('Either you did not specify sampling strata or some sampling strata have missing values. Ignoring all strata.')
   temp <- fulltable(as.factor(sampledtest),as.factor(stdtest))
-  dimtemp <- dim(temp); I <- dim(temp)[1]-3
-  # For I ratings and S strata, temp is (I+3)x(I+3)
-  # Get rid of the 3 NA, <NA>, and Sum row/cols/strata; cells is IxIx1
+  
+  # dimtemp <- dim(temp); I <- dim(temp)[1]-3
+  # # For I ratings and S strata, temp is (I+3)x(I+3)
+  # # Get rid of the 3 NA, <NA>, and Sum row/cols/strata; cells is IxIx1
+  
+  I <- dim(temp)[1]-i.o #MM
+  stopifnot(I >= 2) ## inner logic below (margins  &  colSums(cells) must match)
+  # For I ratings and S strata, temp is (I+i.o)x(I+i.o)
+  # Get rid of  <NA> and Sum  row/cols/strata; cells is IxIx1
+    
   cells <- array(dim=c(I,I,1)) # Ensure third index remains when only 1 stratum
   cells[,,1] <- temp[1:I,1:I,drop=FALSE] 
   # Pick out the Sum row (last row) the p colsums; is vector of I elements
-  margins <- temp[I+3,1:I] 
+  # margins <- temp[I+3,1:I] 
+  
+  margins    <- temp[I+i.o,1:I] #MM
+  
 }
 
 ##

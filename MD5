@@ -1,8 +1,8 @@
-d0a318547916bda94eff40743dd6c7a8 *DESCRIPTION
+a3346d040a08abe7ad0798d18f2cd91c *DESCRIPTION
 6c0715219ecf305c67eaf3d9fd6e0ab0 *NAMESPACE
 099a59eb82b4f1788c61cbf999a184e1 *NEWS
-ae40187af7795b0aac69a3da858937f6 *R/CompareTests.R
-cc675b3070ab16307aa95fa41a88e1b8 *R/fulltable.R
+61e826a76c184a397a1cc9e422411eb5 *R/CompareTests.R
+cf61ba41660e64983b85e65ce80a0bc1 *R/fulltable.R
 495ecb488d091e2fe76d67e59363944e *data/specimens.rda
 b3e0d09c3ac56275d1826f4e707d7768 *man/CompareTests-package.Rd
 9c5ed9e5c511917d387ddd58f1ef5d52 *man/CompareTests.Rd

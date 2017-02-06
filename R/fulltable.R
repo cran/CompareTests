@@ -1,5 +1,7 @@
-fulltable <-
-function (...)
+fulltable <- 
+  if(getRversion() >= "3.4") { # Suggested by Martin Maechler 17Aug16
+    function(...) addmargins(table(..., useNA="always"))
+  } else function (...)
 {
   ## Purpose: Add the margins automatically and don't exclude NA/NaN as its own row/column
   ##          and also add row/column titles.  Works for mixed numeric/factor variables.
